@@ -8,6 +8,7 @@ import pytesseract
 from uuid import uuid4 as uuid
 import requests
 from time import sleep
+import serial
 
 def is_plate_valid(plate):
    try:
@@ -17,11 +18,14 @@ def is_plate_valid(plate):
    except Exception as e:
       return False
 
+def print_to_arduino(string):
+   arduino.write(bytes(f"{string};", 'utf-8'))
+
 def open_gate():
-   pass
+   print_to_arduino('open')
 
 def close_gate():
-   pass
+   print_to_arduino("close")
 
 def remove_non_alphanumeric(string):
    new_str = ""
@@ -214,6 +218,9 @@ def preprocess_image_demo(i):
 
 
 system('clear')
+
+# Serial communication setup
+arduino = serial.Serial(None, 9600)
 
 reader = easyocr.Reader(['en'])
 model_path = Path("best.pt")

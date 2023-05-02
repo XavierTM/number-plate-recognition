@@ -1,10 +1,13 @@
 
-
+#include <Servo.h>
 
 String serial_data = "";
+Servo gate;
 
 void setup() {
    Serial.begin(9600);
+   gate.attach(4);
+   gate.write(0);
 }
 
 void loop() {
@@ -27,11 +30,11 @@ void loop() {
 }
 
 void open_gate() {
-
+   gate.write(90);
 }
 
 
 void close_gate() {
-
+   gate.write(0);
 }
 

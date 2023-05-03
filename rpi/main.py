@@ -7,8 +7,8 @@ import easyocr
 import pytesseract
 from uuid import uuid4 as uuid
 import requests
-from time import sleep
-import serial
+from gate import open_and_close_gate
+from time import time
 
 def is_plate_valid(plate):
    try:
@@ -17,15 +17,6 @@ def is_plate_valid(plate):
       return data['registered']
    except Exception as e:
       return False
-
-def print_to_arduino(string):
-   arduino.write(bytes(f"{string};", 'utf-8'))
-
-def open_gate():
-   print_to_arduino('open')
-
-def close_gate():
-   print_to_arduino("close")
 
 def remove_non_alphanumeric(string):
    new_str = ""
@@ -219,8 +210,6 @@ def preprocess_image_demo(i):
 
 system('clear')
 
-# Serial communication setup
-arduino = serial.Serial(None, 9600)
 
 reader = easyocr.Reader(['en'])
 model_path = Path("best.pt")
@@ -233,6 +222,9 @@ model = model.to(device)
 # video_path = 'videos/test_10.mp4'
 video_path = 0
 vc = cv2.VideoCapture(video_path)
+
+last_valid_plate = None
+last_valid_plate_time = 0
 
 while (True):
 
@@ -255,72 +247,26 @@ while (True):
       plate = process_image_on_coordinates(frame, top, bottom)
 
       if (len(plate) > 0):
-         # add_text_with_box(frame, plate, x_top, y_bottom)
+         add_text_with_box(frame, plate, x_top, y_bottom)
 
-         # height = y_bottom - y_top
-         # width  = x_bottom - x_top
+         height = y_bottom - y_top
+         width  = x_bottom - x_top
 
-         # draw_box(frame, top, width=width, height=height)
+         draw_box(frame, top, width=width, height=height)
 
          plate_is_valid = is_plate_valid(plate)
 
          if (plate_is_valid):
-            open_gate()
-            sleep(5)
-            close_gate()
+
+            if (plate == last_valid_plate) and (last_valid_plate_time > time() - 20):
+               pass
+            else:
+               open_and_close_gate()
+               last_valid_plate = plate
+               last_valid_plate_time = time()
 
       
-   # cv2.imshow('Video Feed', frame)
-   # cv2.waitKey(1)
+   cv2.imshow('Video Feed', frame)
+   cv2.waitKey(1)
 
-
-
-
-
-# for i in range(1, 19):
-
-#    preprocess_image_demo(i)
-   
-#    # filename = f'plates_{i}.jpeg'
-#    # file_path = f'images/{filename}'
-#    # plate = detect_from_disk_image(file_path)
-
-#    # print(f'{filename}: {plate}')
-
-
-# success, frame = vc.read()
-# height, width, _ = frame.shape
-# size = (width, height)
-# out = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
-
-# while (True):
-
-#    success, frame = vc.read()
-
-#    if (not success):
-#       break
-
-#    # get plate coordinates
-#    coordinates = get_numberplate_coordinates(frame)
-
-#    if (coordinates is not None):
-  
-#       top, bottom = coordinates
-
-#       x_top, y_top = top
-#       x_bottom, y_bottom = bottom
-
-#       plate = process_image_on_coordinates(frame, top, bottom)
-
-#       if (len(plate) > 0):
-#          add_text_with_box(frame, plate, x_top, y_bottom)
-
-#          height = y_bottom - y_top
-#          width  = x_bottom - x_top
-
-#          draw_box(frame, top, width=width, height=height)
-
-#    out.write(frame)
-
-# out.release()
 
